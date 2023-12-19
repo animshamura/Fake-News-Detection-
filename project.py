@@ -86,4 +86,46 @@ ps = PorterStemmer()
 data['text'] = data['text'].apply(lambda x: [ps.stem(item) for item in x])
 data['text'] = data['text'].apply(lambda x: " ".join(x))
 
+#train and test text
 train_texts = data.text[:5000]
+test_texts = data.text[5000:]
+
+#define count-vectorizer 
+cv = CountVectorizer(min_df=0, max_df=1, binary = False, ngram_range = (1,3))
+
+#apply fit-tranform to train text
+cv_train_texts = cv.fit_transform(train_texts)
+
+#apply transform to test texts
+cv_test_texts = cv.transform(test_texts)
+
+#define label-binarizer 
+lb = LabelBinarizer()
+
+#apply fit-transform to train word label
+lb_train_label = lb.fit_transform(train_word_label)
+
+#apply fit-transform to test word label
+lb_test_label = lb.fit_transform(test_word_label)
+
+#define multinomial naive bayes,predic data and check accuracy
+mnb = MultinomialNB()
+mnb_bow = mnb.fit(cv_train_texts, lb_train_label)
+mnb_predict = mnb.predict(cv_test_texts)
+mnb_score = accuracy_score(lb_test_label, mnb_predict)
+print("Accuracy (MNB) :", mnb_score)
+
+#define support vector classifier,predic data and check accuracy
+svm = SVC()
+svm_bow = svm.fit(cv_train_texts, lb_train_label)
+svm_predict = svm.predict(cv_test_texts)
+svm_score = accuracy_score(lb_test_label, svm_predict)
+print("Accuracy (SVM) :", svm_score)
+
+#apply wordcloud to get a visual representation of the most used words from real news
+real_news = " ".join(list(data[data['word_label'] == 'real']['text']))
+wordcloud = WordCloud(width=800, height=500, random_state=21, max_font_size=110).generate(real_news)
+mp.figure(figsize=(10, 7))
+mp.imshow(wordcloud, interpolation="bilinear")
+mp.axis('off')
+mp.show()
